@@ -1,13 +1,16 @@
 class Test {
   final num given;
   final String want;
-  final String? desc;
+  final String? _desc;
+  String get desc {
+    return 'given: $given, desc: $_desc';
+  }
 
   const Test({
     required this.given,
     required this.want,
-    this.desc,
-  });
+    desc,
+  }) : _desc = desc;
 }
 
 class TestCase {

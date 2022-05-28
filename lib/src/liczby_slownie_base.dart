@@ -7,69 +7,109 @@ class FloatingPointNumber {
   late final int integer;
   late final int decimal;
   late final int decimalRowMagnitude;
+  late final bool isNegative;
 
-  FloatingPointNumber(this.integer, this.decimal, this.decimalRowMagnitude);
+  FloatingPointNumber(this.integer, this.decimal, this.decimalRowMagnitude,
+      [this.isNegative = false]);
 
-  FloatingPointNumber.fromDouble(double number) {
-    integer = number.floor();
-    final decimalPartTxt = (number).toString().split('.')[1]; // TODO check number - integer to string
+  FloatingPointNumber.fromDouble(double number, [bool? isNegative]) {
+    this.isNegative = isNegative ?? number < 0;
+    integer = (number < 0 ? number * -1 : number).floor();
+    final decimalPartTxt = (number)
+        .toString()
+        .split('.')[1]; // TODO check number - integer to string
     decimalRowMagnitude = decimalPartTxt.length;
     decimal = int.parse(decimalPartTxt);
-    if (number <= 0) {
-      integer = -integer;
-      decimal = -decimal;
-    }
   }
 
   /// use to deal with prices represented as double to keep decimal part rounded to second place
-  FloatingPointNumber.fromPrice(double price) {
-    integer = price.floor();
-    decimal = ((price - integer) * 100).round();
+  FloatingPointNumber.fromPrice(double price, [bool? isNegative]) {
+    this.isNegative = isNegative ?? price < 0;
+    final positivePrice = (price < 0 ? -price : price);
+    integer = positivePrice.floor();
+    decimalRowMagnitude = 2;
+    decimal = ((positivePrice - integer) * 100).round();
   }
 
   double toDouble() {
-    final double d = integer.toDouble() + decimal / pow(10, decimalRowMagnitude);
+    double d = integer.toDouble() + decimal / pow(10, decimalRowMagnitude);
+    if (isNegative) {
+      d *= -1;
+    }
     return d;
   }
 }
 
 class NumberWord {
-  String translate(num number) {
-    switch (number.runtimeType) {
-      case int:
-        return intToWord(number as int);
-      case double:
-        return doubleToWord(number as double);
-
-      default:
-        throw Exception('use int or double type');
-    }
+  /// int only
+  String translate(int number) {
+    return intToWord(number);
   }
 
-  String translatePrice(num price) {
+  // isNegative - see below
+  String translatePrice(num price, [int? decimalPart, bool? isNegative]) {
+    assert(
+      !(price < 0 && isNegative == false),
+      'setting isNegative to true will override price mark',
+    );
+
+    late final FloatingPointNumber priceRepresentation;
     switch (price.runtimeType) {
       case int:
-        return '${doubleToWord(price / 100)} PLN';
+        decimalPart ??= 0;
+        assert(decimalPart >= 0 && decimalPart <= 99,
+            'decimal part of money must be 0-99 inclusive');
+        if (decimalPart < 0) {
+          decimalPart *= -1;
+        }
+        if (decimalPart > 99) {
+          decimalPart = int.parse(decimalPart.toString().substring(0, 2));
+        }
+        priceRepresentation = FloatingPointNumber(
+          price as int,
+          decimalPart,
+          2,
+          // to handle values like price = -0 and decimalPart > 0, eg. -0.69
+          // in that case price would be interpreted as not-negative
+          (isNegative == true && (price != 0 || decimalPart > 0)) ||
+              (price < 0),
+        );
+        break;
       case double:
-        return '${doubleToWord(price as double)} PLN';
-
+        assert(decimalPart == null,
+            "when `price` is of type double `decimalPart` must be null");
+        priceRepresentation =
+            FloatingPointNumber.fromPrice(price as double, isNegative);
+        break;
       default:
         throw Exception('use int or double type');
     }
+
+    return _translateDoublePrice(priceRepresentation);
   }
 
-  String doubleToWord(double number) {
-    if (number == 0) {
-      return 'zero';
+  String _translateDoublePrice(FloatingPointNumber price) {
+    final integerUnitName =
+        _selectUnitName(price.integer, ['złoty', 'złote', 'złotych']);
+
+    final decimalUnitName =
+        _selectUnitName(price.decimal, ['grosz', 'grosze', 'groszy']);
+
+    return '${price.isNegative ? 'minus ' : ''}${_uintToWord(price.integer)} $integerUnitName, ${_uintToWord(price.decimal)} $decimalUnitName';
+  }
+
+  static String _selectUnitName(int number, List<String> names) {
+    int n = number % 10;
+
+    if (number == 1) {
+      return names[0];
     }
 
-    final FloatingPointNumber floatingPointNumber =
-        FloatingPointNumber.fromDouble(number);
+    if (n >= 2 && n <= 4 && (number < 11 || number > 21)) {
+      return names[1];
+    }
 
-    String out =
-        '${_uintToWord(floatingPointNumber.integer)} i ${_uintToWord(floatingPointNumber.decimal, true)}';
-
-    return (number < 0 ? 'minus ' : '') + out;
+    return names[2];
   }
 
   String intToWord(int number) {
@@ -79,14 +119,13 @@ class NumberWord {
     return number < 0 ? 'minus ${_uintToWord(-number)}' : _uintToWord(number);
   }
 
-  String _uintToWord(int number, [bool decimalPart = false]) {
+  String _uintToWord(int number) {
     assert(number >= 0, "only non-negative integers");
     if (number == 0) {
       return 'zero';
     }
 
-    final currentRowsOfMagnitude =
-        decimalPart ? decimalRowsOfMagnitude : rowsOfMagnitude;
+    final currentRowsOfMagnitude = rowsOfMagnitude;
 
     int integer = number;
 
