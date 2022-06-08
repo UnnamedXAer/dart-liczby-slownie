@@ -1,3 +1,4 @@
+import 'package:liczby_slownie/src/liczby_slownie_base.dart' show FloatingPointNumber;
 import 'package:liczby_slownie/liczby_slownie.dart';
 import 'package:test/test.dart';
 
