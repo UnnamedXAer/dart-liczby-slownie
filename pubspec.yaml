@@ -1,7 +1,7 @@
 name: liczby_slownie
 description: A small library for translating numbers into polish words.
 version: 1.0.0
-publish_to: https://pub.dev/
+publish_to: https://pub.dartlang.org
 homepage: https://github.com/UnnamedXAer/dart-liczby-slownie#readme
 
 environment:
