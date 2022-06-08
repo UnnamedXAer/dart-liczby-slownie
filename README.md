@@ -2,8 +2,8 @@ It's small library for translating numbers and prices into polish words.
 
 ## Features
 
-- translates integers to polish words
-- translates money amount into polish words
+- translating integers to polish words
+- translating money amount to polish words
 
 ## Usage
 
