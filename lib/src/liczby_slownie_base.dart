@@ -2,7 +2,7 @@ import 'dart:math' show pow;
 
 import 'package:liczby_slownie/src/constants.dart';
 
-/// @private
+/// private
 class FloatingPointNumber {
   late final int integer;
   late final int decimal;
@@ -40,13 +40,30 @@ class FloatingPointNumber {
   }
 }
 
+/// Utility class that exposes methods to convert numbers / prices into polish words.
+///
+/// ```dart
+/// final nw = NumberWord();`
+/// final n = 567;
+/// print('$n -> ${nw.intToWord(n)}'); // 567 -> pięćset sześćdziesiąt siedem
+/// print('w sumie: ${n/100} PLN, słownie: ${nw.translatePrice(n/100)}'); // w sumie: 5.67 PLN, słownie: pięć złotych, sześćdziesiąt siedem groszy
+/// ```
 class NumberWord {
-  /// int only
+  /// Returns given [number] as polish words
   String translate(int number) {
     return intToWord(number);
   }
 
-  // isNegative - see below
+  /// Returns given amount of money as polish words
+  ///
+  /// ```dart
+  /// nw.translatePrice(5.99);            // słownie: pięć złotych, dziewięćdziesiąt dziewięć groszy
+  /// nw.translatePrice(-5.99);           // słownie: minus pięć złotych, dziewięćdziesiąt dziewięć groszy
+  /// nw.translatePrice(5, 99);           // słownie: pięć złotych, dziewięćdziesiąt dziewięć groszy
+  /// nw.translatePrice(5, 99, false);    // słownie: minus pięć złotych, dziewięćdziesiąt dziewięć groszy
+  /// nw.translatePrice(5, 99, true);     // słownie: minus pięć złotych, dziewięćdziesiąt dziewięć groszy
+  /// nw.translatePrice(5, null, false);  // słownie: pięć złotych, zero groszy
+  /// ```
   String translatePrice(num price, [int? decimalPart, bool? isNegative]) {
     assert(
       !(price < 0 && isNegative == false),
@@ -112,6 +129,14 @@ class NumberWord {
     return names[2];
   }
 
+  /// Returns given [number] as polish words
+  ///
+  /// works in the range of `(-9223372036854775807)` to `9223372036854775807`
+  /// ```dart
+  /// final nw = NumberWord();`
+  /// final n = 567;
+  /// print('$n -> ${nw.intToWord(n)}'); // 567 -> pięćset sześćdziesiąt siedem
+  /// ```
   String intToWord(int number) {
     if (number == 0) {
       return 'zero';
